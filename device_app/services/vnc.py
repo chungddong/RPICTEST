@@ -28,9 +28,9 @@ class VncManager:
             self.started = True
             return
 
-        vncserver = shutil.which("vncserver")
+        vncserver = self._find_tigervncserver()
         if not vncserver:
-            self.errors.append("vncserver command not found")
+            self.errors.append("tigervncserver command not found")
             self.started = False
             return
 
@@ -115,7 +115,7 @@ class VncManager:
         if self.dry_run or platform.system() != "Linux":
             return
 
-        vncserver = shutil.which("vncserver")
+        vncserver = self._find_tigervncserver()
         if vncserver:
             subprocess.run(
                 [vncserver, "-kill", self.config.display],
@@ -132,6 +132,15 @@ class VncManager:
         candidate = Path("/usr/share/novnc/utils/novnc_proxy")
         if candidate.exists():
             return str(candidate)
+        return None
+
+    def _find_tigervncserver(self) -> str | None:
+        # Raspberry Pi OS often ships RealVNC as `vncserver`, which is not compatible
+        # with the virtual desktop flow noVNC expects here. Prefer TigerVNC explicitly.
+        for name in ("tigervncserver",):
+            command = shutil.which(name)
+            if command:
+                return command
         return None
 
     def _ensure_xstartup(self) -> None:
