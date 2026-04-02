@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Classroom Pi</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <p class="eyebrow">Raspberry Pi Classroom Device</p>
+        <h1 id="device-name">Connecting...</h1>
+        <p id="device-meta" class="subtle">Loading device state</p>
+      </section>
+
+      <section class="grid">
+        <article class="card">
+          <div class="card-header">
+            <h2>Runtime</h2>
+            <button id="start-runtime">Start runtime</button>
+          </div>
+          <pre id="runtime-json" class="status-block"></pre>
+        </article>
+
+        <article class="card">
+          <div class="card-header">
+            <h2>GPIO</h2>
+            <button id="refresh-gpio">Refresh</button>
+          </div>
+          <div id="gpio-list" class="gpio-list"></div>
+        </article>
+      </section>
+
+      <section class="card terminal-card">
+        <div class="card-header">
+          <h2>Browser Terminal</h2>
+          <button id="create-terminal">Create session</button>
+        </div>
+        <pre id="terminal-output" class="terminal-output"></pre>
+        <form id="terminal-form" class="terminal-form">
+          <input id="terminal-input" type="text" placeholder="python3, ls, gpio test..." autocomplete="off">
+          <button type="submit">Send</button>
+        </form>
+      </section>
+    </main>
+
+    <script src="/ui.js"></script>
+  </body>
+</html>

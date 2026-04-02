@@ -1,0 +1,25 @@
+{
+  "device_id": "rpic-001",
+  "device_name": "Classroom Pi 001",
+  "hotspot": {
+    "ssid": "RPIC-001",
+    "password": "classroompi",
+    "interface": "wlan0",
+    "address": "192.168.4.1",
+    "subnet_cidr": "192.168.4.0/24"
+  },
+  "ble": {
+    "enabled": true,
+    "local_name": "RPIC-001",
+    "service_uuid": "12345678-1234-5678-9abc-def012345678",
+    "advertised_fields": {
+      "device_id": "rpic-001",
+      "ssid": "RPIC-001",
+      "host": "192.168.4.1",
+      "port": 8080
+    }
+  },
+  "gpio": {
+    "pins": [17, 18, 27]
+  }
+}
