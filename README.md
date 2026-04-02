@@ -48,7 +48,7 @@ The local web app is designed to be reachable at `http://192.168.4.1:8080` after
 One-line install from GitHub with `curl`:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/chungddong/RPICTEST/main/install.sh | bash -s -- main /opt/pi-classroom-device
+curl -fsSL https://raw.githubusercontent.com/chungddong/RPICTEST/main/install.sh | bash -s -- main /opt/pi-classroom-device wlan0 RPIC-001 classroompi
 ```
 
 If the Pi already has this repo checked out:
@@ -67,7 +67,7 @@ chmod +x deploy/install_from_github.sh
 ./deploy/install_from_github.sh https://github.com/chungddong/RPICTEST.git /opt/pi-classroom-device main
 ```
 
-After that, set up the hotspot profile:
+If you want to reconfigure the hotspot later:
 
 ```bash
 sudo /opt/pi-classroom-device/deploy/setup_hotspot_nmcli.sh wlan0 RPIC-001 classroompi
