@@ -36,9 +36,41 @@ Open `http://127.0.0.1:8080`.
 
 ## Raspberry Pi deployment idea
 
-1. Copy this project to the Pi.
+1. Copy this project to the Pi or install directly from GitHub.
 2. Set up hotspot mode with `NetworkManager` or your preferred AP stack.
 3. Install the `systemd` service from `deploy/`.
 4. Boot the Pi and let the local server start automatically.
 
 The local web app is designed to be reachable at `http://192.168.4.1:8080` after the phone joins the Pi hotspot.
+
+## Install on Raspberry Pi
+
+One-line install from GitHub with `curl`:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/chungddong/RPICTEST/main/install.sh | bash -s -- main /opt/pi-classroom-device
+```
+
+If the Pi already has this repo checked out:
+
+```bash
+chmod +x deploy/install_pi_service.sh
+./deploy/install_pi_service.sh /opt/pi-classroom-device
+```
+
+If you want a one-step GitHub install from your repository:
+
+```bash
+git clone https://github.com/chungddong/RPICTEST.git
+cd RPICTEST
+chmod +x deploy/install_from_github.sh
+./deploy/install_from_github.sh https://github.com/chungddong/RPICTEST.git /opt/pi-classroom-device main
+```
+
+After that, set up the hotspot profile:
+
+```bash
+sudo /opt/pi-classroom-device/deploy/setup_hotspot_nmcli.sh wlan0 RPIC-001 classroompi
+sudo systemctl start pi-classroom-device.service
+sudo systemctl status pi-classroom-device.service
+```
