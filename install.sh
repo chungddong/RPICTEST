@@ -32,10 +32,8 @@ MISSING_PACKAGES=()
 command -v rsync >/dev/null 2>&1 || MISSING_PACKAGES+=("rsync")
 command -v nmcli >/dev/null 2>&1 || MISSING_PACKAGES+=("network-manager")
 command -v bluetoothctl >/dev/null 2>&1 || MISSING_PACKAGES+=("bluez")
-command -v tigervncserver >/dev/null 2>&1 || MISSING_PACKAGES+=("tigervnc-standalone-server" "tigervnc-tools")
+command -v x11vnc >/dev/null 2>&1 || MISSING_PACKAGES+=("x11vnc")
 command -v novnc_proxy >/dev/null 2>&1 || MISSING_PACKAGES+=("novnc" "websockify")
-command -v openbox-session >/dev/null 2>&1 || MISSING_PACKAGES+=("openbox")
-command -v xterm >/dev/null 2>&1 || MISSING_PACKAGES+=("xterm")
 
 if [ "${#MISSING_PACKAGES[@]}" -gt 0 ]; then
   sudo apt-get update

@@ -3,6 +3,7 @@ from __future__ import annotations
 import platform
 import shutil
 import subprocess
+import time
 from pathlib import Path
 
 from ..config import VncConfig
@@ -13,6 +14,7 @@ class VncManager:
         self.config = config
         self.host = host
         self.dry_run = dry_run
+        self.vnc_process: subprocess.Popen[str] | None = None
         self.novnc_process: subprocess.Popen[bytes] | None = None
         self.started = False
         self.errors: list[str] = []
@@ -28,9 +30,9 @@ class VncManager:
             self.started = True
             return
 
-        vncserver = self._find_tigervncserver()
-        if not vncserver:
-            self.errors.append("tigervncserver command not found")
+        x11vnc = shutil.which("x11vnc")
+        if not x11vnc:
+            self.errors.append("x11vnc command not found")
             self.started = False
             return
 
@@ -40,29 +42,35 @@ class VncManager:
             self.started = False
             return
 
-        self._ensure_xstartup()
         self._stop_existing()
 
         try:
-            subprocess.run(
+            self.vnc_process = subprocess.Popen(
                 [
-                    vncserver,
+                    x11vnc,
                     self.config.display,
+                    "-auth",
+                    "guess",
+                    "-rfbport",
+                    str(self.config.vnc_port),
                     "-localhost",
-                    "yes",
-                    "-geometry",
-                    self.config.geometry,
-                    "-depth",
-                    str(self.config.depth),
-                    "-xstartup",
-                    str(self._xstartup_path()),
-                    "-SecurityTypes",
-                    "None",
+                    "-forever",
+                    "-shared",
+                    "-nopw",
+                    "-xkb",
+                    "-noxdamage",
                 ],
-                check=True,
-                capture_output=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 text=True,
             )
+            time.sleep(1.0)
+            if self.vnc_process.poll() is not None:
+                stdout, stderr = self.vnc_process.communicate()
+                self.errors.append((stderr or stdout or "x11vnc exited immediately").strip())
+                self.vnc_process = None
+                self.started = False
+                return
 
             self.novnc_process = subprocess.Popen(
                 [
@@ -72,12 +80,21 @@ class VncManager:
                     "--vnc",
                     f"localhost:{self.config.vnc_port}",
                 ],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=False,
                 start_new_session=True,
             )
+            time.sleep(0.5)
+            if self.novnc_process.poll() is not None:
+                stdout, stderr = self.novnc_process.communicate()
+                self.errors.append((stderr or stdout or b"novnc_proxy exited immediately").decode(errors="replace").strip())
+                self.novnc_process = None
+                self._stop_existing()
+                self.started = False
+                return
             self.started = True
-        except (FileNotFoundError, subprocess.CalledProcessError) as exc:
+        except FileNotFoundError as exc:
             self.errors.append(str(exc))
             self.started = False
 
@@ -88,9 +105,13 @@ class VncManager:
         novnc_running = self.started if self.dry_run else (
             self.novnc_process is not None and self.novnc_process.poll() is None
         )
+        vnc_running = self.started if self.dry_run else (
+            self.vnc_process is not None and self.vnc_process.poll() is None
+        )
         return {
             "enabled": self.config.enabled,
             "started": self.started,
+            "backend": "x11vnc-live-desktop",
             "display": self.config.display,
             "geometry": self.config.geometry,
             "vnc_port": self.config.vnc_port,
@@ -99,11 +120,20 @@ class VncManager:
             "host_hint": self.host,
             "client_path": "/vnc.html?autoconnect=1&resize=scale&view_only=0",
             "novnc_running": novnc_running,
+            "vnc_running": vnc_running,
             "dry_run": self.dry_run,
             "errors": self.errors,
         }
 
     def _stop_existing(self) -> None:
+        if self.vnc_process is not None and self.vnc_process.poll() is None:
+            self.vnc_process.terminate()
+            try:
+                self.vnc_process.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                self.vnc_process.kill()
+        self.vnc_process = None
+
         if self.novnc_process is not None and self.novnc_process.poll() is None:
             self.novnc_process.terminate()
             try:
@@ -112,17 +142,7 @@ class VncManager:
                 self.novnc_process.kill()
         self.novnc_process = None
 
-        if self.dry_run or platform.system() != "Linux":
-            return
-
-        vncserver = self._find_tigervncserver()
-        if vncserver:
-            subprocess.run(
-                [vncserver, "-kill", self.config.display],
-                check=False,
-                capture_output=True,
-                text=True,
-            )
+        self.started = False
 
     def _find_novnc_proxy(self) -> str | None:
         command = shutil.which("novnc_proxy")
@@ -133,39 +153,3 @@ class VncManager:
         if candidate.exists():
             return str(candidate)
         return None
-
-    def _find_tigervncserver(self) -> str | None:
-        # Raspberry Pi OS often ships RealVNC as `vncserver`, which is not compatible
-        # with the virtual desktop flow noVNC expects here. Prefer TigerVNC explicitly.
-        for name in ("tigervncserver",):
-            command = shutil.which(name)
-            if command:
-                return command
-        return None
-
-    def _ensure_xstartup(self) -> None:
-        xstartup = self._xstartup_path()
-        xstartup.parent.mkdir(parents=True, exist_ok=True)
-        session = self.config.desktop_session.strip()
-        xstartup.write_text(
-            "#!/usr/bin/env bash\n"
-            "unset SESSION_MANAGER\n"
-            "unset DBUS_SESSION_BUS_ADDRESS\n"
-            "xsetroot -solid '#0f172a'\n"
-            f"if command -v {session} >/dev/null 2>&1; then\n"
-            f"  {session} &\n"
-            "elif command -v startlxde >/dev/null 2>&1; then\n"
-            "  startlxde &\n"
-            "elif command -v openbox-session >/dev/null 2>&1; then\n"
-            "  openbox-session &\n"
-            "fi\n"
-            "if command -v xterm >/dev/null 2>&1; then\n"
-            "  xterm -fa 'Monospace' -fs 12 -bg '#111827' -fg '#c7f9cc' &\n"
-            "fi\n"
-            "wait\n",
-            encoding="utf-8",
-        )
-        xstartup.chmod(0o755)
-
-    def _xstartup_path(self) -> Path:
-        return Path.home() / ".vnc" / "xstartup"

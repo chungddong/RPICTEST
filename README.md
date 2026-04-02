@@ -7,14 +7,14 @@ This repository contains a Raspberry Pi device-side MVP for the flow below:
 3. A mobile app discovers nearby devices over BLE.
 4. The app connects to the chosen device hotspot.
 5. The app opens the device workspace inside a WebView.
-6. The student uses the browser terminal or VNC desktop.
+6. The student uses the browser terminal or the real Pi desktop via VNC.
 
 The first version in this repo is intentionally lightweight:
 
 - Pure Python standard library
 - Mobile-friendly local web UI
 - Terminal session support
-- noVNC-backed desktop session support
+- noVNC-backed live desktop sharing support
 - Hotspot and BLE orchestration with Raspberry Pi friendly command hooks
 - `systemd` unit and setup scripts for Pi deployment
 
@@ -42,8 +42,10 @@ Open `http://127.0.0.1:8080`.
 4. Boot the Pi and let the local server start automatically.
 
 The local web app is designed to be reachable at `http://192.168.4.1:8080` after the phone joins the Pi hotspot.
-The VNC tab connects to a local noVNC server on port `6080`.
+The VNC tab connects to a local noVNC server on port `6080` and mirrors the Pi's live desktop on display `:0`.
 For a lightweight connectivity check, open `http://192.168.4.1:8080/healthz`.
+
+For live desktop sharing, the Pi must be running a real graphical desktop session on `:0`.
 
 ## Install on Raspberry Pi
 

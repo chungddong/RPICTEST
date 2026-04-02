@@ -60,12 +60,12 @@ def load_device_config(path: Path) -> DeviceConfig:
 
     vnc_defaults = {
         "enabled": True,
-        "display": ":1",
-        "geometry": "1280x720",
+        "display": ":0",
+        "geometry": "desktop-live",
         "depth": 24,
-        "vnc_port": 5901,
+        "vnc_port": 5900,
         "novnc_port": 6080,
-        "desktop_session": "openbox-session",
+        "desktop_session": "system-desktop",
     }
 
     return DeviceConfig(
