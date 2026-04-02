@@ -29,11 +29,23 @@ class GpioConfig:
 
 
 @dataclass(slots=True)
+class VncConfig:
+    enabled: bool
+    display: str
+    geometry: str
+    depth: int
+    vnc_port: int
+    novnc_port: int
+    desktop_session: str
+
+
+@dataclass(slots=True)
 class DeviceConfig:
     device_id: str
     device_name: str
     hotspot: HotspotConfig
     ble: BleConfig
+    vnc: VncConfig
     gpio: GpioConfig
 
     def to_public_dict(self) -> dict[str, Any]:
@@ -46,10 +58,21 @@ def load_device_config(path: Path) -> DeviceConfig:
     with path.open("r", encoding="utf-8") as handle:
         raw = json.load(handle)
 
+    vnc_defaults = {
+        "enabled": True,
+        "display": ":1",
+        "geometry": "1280x720",
+        "depth": 24,
+        "vnc_port": 5901,
+        "novnc_port": 6080,
+        "desktop_session": "openbox-session",
+    }
+
     return DeviceConfig(
         device_id=raw["device_id"],
         device_name=raw["device_name"],
         hotspot=HotspotConfig(**raw["hotspot"]),
         ble=BleConfig(**raw["ble"]),
+        vnc=VncConfig(**(vnc_defaults | raw.get("vnc", {}))),
         gpio=GpioConfig(**raw["gpio"]),
     )

@@ -3,45 +3,59 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Classroom Pi</title>
+    <title>Classroom Pi Workspace</title>
     <link rel="stylesheet" href="/styles.css">
   </head>
   <body>
-    <main class="shell">
-      <section class="hero">
-        <p class="eyebrow">Raspberry Pi Classroom Device</p>
-        <h1 id="device-name">Connecting...</h1>
-        <p id="device-meta" class="subtle">Loading device state</p>
-      </section>
-
-      <section class="grid">
-        <article class="card">
-          <div class="card-header">
-            <h2>Runtime</h2>
-            <button id="start-runtime">Start runtime</button>
-          </div>
-          <pre id="runtime-json" class="status-block"></pre>
-        </article>
-
-        <article class="card">
-          <div class="card-header">
-            <h2>GPIO</h2>
-            <button id="refresh-gpio">Refresh</button>
-          </div>
-          <div id="gpio-list" class="gpio-list"></div>
-        </article>
-      </section>
-
-      <section class="card terminal-card">
-        <div class="card-header">
-          <h2>Browser Terminal</h2>
-          <button id="create-terminal">Create session</button>
+    <main class="workspace-shell">
+      <header class="topbar">
+        <div class="topbar-copy">
+          <p class="eyebrow">Raspberry Pi Classroom Device</p>
+          <h1 id="device-name">Connecting...</h1>
+          <p id="device-meta" class="subtle">Loading workspace state</p>
         </div>
-        <pre id="terminal-output" class="terminal-output"></pre>
-        <form id="terminal-form" class="terminal-form">
-          <input id="terminal-input" type="text" placeholder="python3, ls, gpio test..." autocomplete="off">
-          <button type="submit">Send</button>
-        </form>
+        <div class="topbar-actions">
+          <span id="vnc-status" class="status-pill">Checking VNC</span>
+          <button id="start-vnc" type="button">Start VNC</button>
+        </div>
+      </header>
+
+      <nav class="tabs" aria-label="Workspace tabs">
+        <button class="tab-button is-active" data-tab-target="terminal-panel" type="button">SSH Terminal</button>
+        <button class="tab-button" data-tab-target="vnc-panel" type="button">VNC Desktop</button>
+      </nav>
+
+      <section class="workspace-panels">
+        <section id="terminal-panel" class="panel is-active" aria-label="SSH terminal">
+          <div class="panel-header">
+            <div>
+              <h2>SSH Terminal</h2>
+              <p class="subtle">Device shell inside the browser</p>
+            </div>
+            <button id="create-terminal" type="button">Reconnect Terminal</button>
+          </div>
+          <pre id="terminal-output" class="terminal-output"></pre>
+          <form id="terminal-form" class="terminal-form">
+            <input id="terminal-input" type="text" placeholder="python3, ls, sudo systemctl status..." autocomplete="off">
+            <button type="submit">Send</button>
+          </form>
+        </section>
+
+        <section id="vnc-panel" class="panel" aria-label="VNC desktop">
+          <div class="panel-header">
+            <div>
+              <h2>VNC Desktop</h2>
+              <p class="subtle">Full desktop session through noVNC</p>
+            </div>
+            <a id="open-vnc" class="link-button" href="#" target="_blank" rel="noreferrer">Open in New Tab</a>
+          </div>
+          <div class="vnc-stage">
+            <iframe id="vnc-frame" class="vnc-frame" title="VNC Desktop"></iframe>
+            <div id="vnc-overlay" class="vnc-overlay">
+              <p id="vnc-message">Preparing VNC desktop</p>
+            </div>
+          </div>
+        </section>
       </section>
     </main>
 

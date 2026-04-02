@@ -8,6 +8,7 @@ from .services.ble import BleAdvertiser
 from .services.gpio import GpioController
 from .services.hotspot import HotspotManager
 from .services.terminal import TerminalManager
+from .services.vnc import VncManager
 
 
 class DeviceApplication:
@@ -19,6 +20,7 @@ class DeviceApplication:
 
         self.hotspot = HotspotManager(self.config.hotspot, dry_run=dry_run)
         self.ble = BleAdvertiser(self.config.ble, self.config.device_id, dry_run=dry_run)
+        self.vnc = VncManager(self.config.vnc, host, dry_run=dry_run)
         self.gpio = GpioController(self.config.gpio, dry_run=dry_run)
         self.terminals = TerminalManager()
 
@@ -28,6 +30,7 @@ class DeviceApplication:
             config=self.config,
             hotspot=self.hotspot,
             ble=self.ble,
+            vnc=self.vnc,
             gpio=self.gpio,
             terminals=self.terminals,
         )
@@ -35,4 +38,5 @@ class DeviceApplication:
     def run(self) -> None:
         self.hotspot.start()
         self.ble.start()
+        self.vnc.start()
         self.server.serve_forever()

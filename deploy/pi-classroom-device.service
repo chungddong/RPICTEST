@@ -9,7 +9,7 @@ WorkingDirectory=/opt/pi-classroom-device
 ExecStart=/usr/bin/python3 -m device_app --config /opt/pi-classroom-device/config/device.sample.json --host 0.0.0.0 --port 8080
 Restart=always
 RestartSec=3
-User=pi
+User=__SERVICE_USER__
 Environment=PYTHONUNBUFFERED=1
 
 [Install]

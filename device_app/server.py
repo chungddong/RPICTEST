@@ -13,6 +13,7 @@ from .services.ble import BleAdvertiser
 from .services.gpio import GpioController
 from .services.hotspot import HotspotManager
 from .services.terminal import TerminalManager
+from .services.vnc import VncManager
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 
@@ -25,6 +26,7 @@ class DeviceServer:
         config: DeviceConfig,
         hotspot: HotspotManager,
         ble: BleAdvertiser,
+        vnc: VncManager,
         gpio: GpioController,
         terminals: TerminalManager,
     ) -> None:
@@ -33,6 +35,7 @@ class DeviceServer:
         self.config = config
         self.hotspot = hotspot
         self.ble = ble
+        self.vnc = vnc
         self.gpio = gpio
         self.terminals = terminals
 
@@ -44,6 +47,7 @@ class DeviceServer:
         try:
             self.httpd.serve_forever()
         finally:
+            self.vnc.stop()
             self.terminals.close_all()
 
     def _build_handler(self) -> type[BaseHTTPRequestHandler]:
@@ -69,6 +73,7 @@ class DeviceServer:
                                 "runtime": {
                                     "hotspot": server.hotspot.status(),
                                     "ble": server.ble.status(),
+                                    "vnc": server.vnc.status(),
                                     "gpio": server.gpio.status(),
                                 },
                             }
@@ -104,9 +109,17 @@ class DeviceServer:
                     if parsed.path == "/api/runtime/start":
                         server.hotspot.start()
                         server.ble.start()
+                        server.vnc.start()
                         return self._json_response(
-                            {"hotspot": server.hotspot.status(), "ble": server.ble.status()}
+                            {
+                                "hotspot": server.hotspot.status(),
+                                "ble": server.ble.status(),
+                                "vnc": server.vnc.status(),
+                            }
                         )
+                    if parsed.path == "/api/vnc/start":
+                        server.vnc.start()
+                        return self._json_response(server.vnc.status())
                     if parsed.path == "/api/terminal/session":
                         return self._json_response(server.terminals.create_session())
                     if parsed.path.startswith("/api/terminal/session/") and parsed.path.endswith("/input"):

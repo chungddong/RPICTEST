@@ -10,6 +10,8 @@ class ConfigTestCase(unittest.TestCase):
         public = config.to_public_dict()
         self.assertEqual(public["hotspot"]["password"], "***")
         self.assertEqual(public["device_id"], "rpic-001")
+        self.assertTrue(config.vnc.enabled)
+        self.assertEqual(config.vnc.novnc_port, 6080)
 
 
 if __name__ == "__main__":

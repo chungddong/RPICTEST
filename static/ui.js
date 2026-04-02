@@ -1,4 +1,7 @@
 const state = {
+  device: null,
+  runtime: null,
+  activeTab: "terminal-panel",
   terminal: {
     sessionId: null,
     offset: 0,
@@ -8,8 +11,11 @@ const state = {
 
 const deviceName = document.querySelector("#device-name");
 const deviceMeta = document.querySelector("#device-meta");
-const runtimeJson = document.querySelector("#runtime-json");
-const gpioList = document.querySelector("#gpio-list");
+const vncStatus = document.querySelector("#vnc-status");
+const vncMessage = document.querySelector("#vnc-message");
+const vncFrame = document.querySelector("#vnc-frame");
+const vncOverlay = document.querySelector("#vnc-overlay");
+const openVnc = document.querySelector("#open-vnc");
 const terminalOutput = document.querySelector("#terminal-output");
 const terminalForm = document.querySelector("#terminal-form");
 const terminalInput = document.querySelector("#terminal-input");
@@ -25,52 +31,69 @@ async function request(path, options = {}) {
   return response.json();
 }
 
+function setActiveTab(panelId) {
+  state.activeTab = panelId;
+  document.querySelectorAll(".tab-button").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.tabTarget === panelId);
+  });
+  document.querySelectorAll(".panel").forEach((panel) => {
+    panel.classList.toggle("is-active", panel.id === panelId);
+  });
+}
+
+function buildNoVncUrl(vnc) {
+  const host = window.location.hostname;
+  return `http://${host}:${vnc.novnc_port}${vnc.client_path}`;
+}
+
+function renderVncStatus(vnc) {
+  const running = Boolean(vnc?.novnc_running);
+  vncStatus.textContent = running ? "VNC Ready" : "VNC Offline";
+  vncStatus.classList.toggle("is-online", running);
+  vncStatus.classList.toggle("is-offline", !running);
+
+  if (!vnc?.enabled) {
+    vncMessage.textContent = "VNC is disabled in the device config.";
+    vncOverlay.classList.add("is-visible");
+    return;
+  }
+
+  if (running) {
+    const url = buildNoVncUrl(vnc);
+    openVnc.href = url;
+    if (vncFrame.dataset.src !== url) {
+      vncFrame.src = url;
+      vncFrame.dataset.src = url;
+    }
+    vncOverlay.classList.remove("is-visible");
+    return;
+  }
+
+  const details = vnc?.errors?.length ? vnc.errors.join(" / ") : "Start VNC to prepare the desktop session.";
+  vncMessage.textContent = details;
+  vncOverlay.classList.add("is-visible");
+}
+
 async function refreshStatus() {
   const payload = await request("/api/status");
+  state.device = payload.device;
+  state.runtime = payload.runtime;
+
   deviceName.textContent = payload.device.device_name;
-  deviceMeta.textContent = `${payload.device.device_id} - hotspot ${payload.device.hotspot.ssid} - ${payload.device.hotspot.address}`;
-  runtimeJson.textContent = JSON.stringify(payload.runtime, null, 2);
-  renderGpio(payload.runtime.gpio.pins);
+  deviceMeta.textContent = `${payload.device.device_id} - hotspot ${payload.device.hotspot.ssid} - ${window.location.hostname}:8080`;
+  renderVncStatus(payload.runtime.vnc);
 }
 
-function renderGpio(pins) {
-  gpioList.innerHTML = "";
-  pins.forEach((entry) => {
-    const row = document.createElement("div");
-    row.className = "gpio-item";
-    row.innerHTML = `
-      <strong>GPIO ${entry.pin}</strong>
-      <span class="pill">State ${entry.value}</span>
-    `;
-
-    const onButton = document.createElement("button");
-    onButton.textContent = "ON";
-    onButton.addEventListener("click", () => updateGpio(entry.pin, 1));
-
-    const offButton = document.createElement("button");
-    offButton.textContent = "OFF";
-    offButton.addEventListener("click", () => updateGpio(entry.pin, 0));
-
-    row.appendChild(onButton);
-    row.appendChild(offButton);
-    gpioList.appendChild(row);
-  });
-}
-
-async function updateGpio(pin, value) {
-  await request("/api/gpio/write", {
-    method: "POST",
-    body: JSON.stringify({ pin, value }),
-  });
-  await refreshStatus();
-}
-
-async function startRuntime() {
-  await request("/api/runtime/start", {
+async function startVnc() {
+  const payload = await request("/api/vnc/start", {
     method: "POST",
     body: JSON.stringify({}),
   });
-  await refreshStatus();
+  state.runtime = {
+    ...(state.runtime || {}),
+    vnc: payload,
+  };
+  renderVncStatus(payload);
 }
 
 async function createTerminal() {
@@ -82,6 +105,12 @@ async function createTerminal() {
   state.terminal.offset = 0;
   terminalOutput.textContent = "";
   startTerminalPolling();
+}
+
+async function ensureTerminal() {
+  if (!state.terminal.sessionId) {
+    await createTerminal();
+  }
 }
 
 async function pollTerminal() {
@@ -110,9 +139,7 @@ function startTerminalPolling() {
 }
 
 async function sendTerminalInput(command) {
-  if (!state.terminal.sessionId) {
-    await createTerminal();
-  }
+  await ensureTerminal();
   await request(`/api/terminal/session/${state.terminal.sessionId}/input`, {
     method: "POST",
     body: JSON.stringify({ input: `${command}\n` }),
@@ -120,12 +147,20 @@ async function sendTerminalInput(command) {
   terminalInput.value = "";
 }
 
-document.querySelector("#start-runtime").addEventListener("click", () => {
-  startRuntime().catch((error) => console.error(error));
+document.querySelectorAll(".tab-button").forEach((button) => {
+  button.addEventListener("click", () => {
+    setActiveTab(button.dataset.tabTarget);
+  });
 });
 
-document.querySelector("#refresh-gpio").addEventListener("click", () => {
-  refreshStatus().catch((error) => console.error(error));
+document.querySelector("#start-vnc").addEventListener("click", () => {
+  startVnc()
+    .then(() => refreshStatus())
+    .catch((error) => {
+      console.error(error);
+      vncMessage.textContent = "Failed to start VNC.";
+      vncOverlay.classList.add("is-visible");
+    });
 });
 
 document.querySelector("#create-terminal").addEventListener("click", () => {
@@ -141,4 +176,12 @@ terminalForm.addEventListener("submit", (event) => {
   sendTerminalInput(value).catch((error) => console.error(error));
 });
 
-refreshStatus().catch((error) => console.error(error));
+Promise.all([refreshStatus(), ensureTerminal()])
+  .then(() => {
+    setActiveTab(state.activeTab);
+  })
+  .catch((error) => console.error(error));
+
+setInterval(() => {
+  refreshStatus().catch((error) => console.error(error));
+}, 3000);
