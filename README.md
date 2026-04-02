@@ -42,10 +42,10 @@ Open `http://127.0.0.1:8080`.
 4. Boot the Pi and let the local server start automatically.
 
 The local web app is designed to be reachable at `http://192.168.4.1:8080` after the phone joins the Pi hotspot.
-The VNC tab connects to a local noVNC server on port `6080` and mirrors the Pi's live desktop on display `:0`.
+The VNC tab connects to a local noVNC server on port `6080` and mirrors the Pi's live desktop through the system VNC server.
 For a lightweight connectivity check, open `http://192.168.4.1:8080/healthz`.
 
-For live desktop sharing, the Pi must be running a real graphical desktop session on `:0`.
+For live desktop sharing, the Pi must boot to the graphical desktop with auto-login and have the built-in VNC server enabled.
 
 ## Install on Raspberry Pi
 

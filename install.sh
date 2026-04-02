@@ -32,7 +32,6 @@ MISSING_PACKAGES=()
 command -v rsync >/dev/null 2>&1 || MISSING_PACKAGES+=("rsync")
 command -v nmcli >/dev/null 2>&1 || MISSING_PACKAGES+=("network-manager")
 command -v bluetoothctl >/dev/null 2>&1 || MISSING_PACKAGES+=("bluez")
-command -v x11vnc >/dev/null 2>&1 || MISSING_PACKAGES+=("x11vnc")
 command -v novnc_proxy >/dev/null 2>&1 || MISSING_PACKAGES+=("novnc" "websockify")
 
 if [ "${#MISSING_PACKAGES[@]}" -gt 0 ]; then
@@ -59,6 +58,10 @@ chmod +x "${SOURCE_DIR}/deploy/install_pi_service.sh"
 echo "[6/6] Configuring hotspot and starting service"
 chmod +x "${PROJECT_DIR}/deploy/setup_hotspot_nmcli.sh"
 sudo "${PROJECT_DIR}/deploy/setup_hotspot_nmcli.sh" "${WLAN_IFACE}" "${HOTSPOT_SSID}" "${HOTSPOT_PASSWORD}" "${HOTSPOT_ADDRESS_CIDR}"
+if command -v raspi-config >/dev/null 2>&1; then
+  sudo raspi-config nonint do_vnc 0 || true
+  sudo raspi-config nonint do_boot_behaviour B4 || true
+fi
 sudo systemctl restart pi-classroom-device.service
 
 echo "Install complete"
