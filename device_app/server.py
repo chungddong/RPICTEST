@@ -73,6 +73,15 @@ class DeviceServer:
                                 },
                             }
                         )
+                    if parsed.path == "/healthz":
+                        return self._json_response(
+                            {
+                                "ok": True,
+                                "device_id": server.config.device_id,
+                                "device_name": server.config.device_name,
+                                "bind": f"{server.host}:{server.port}",
+                            }
+                        )
                     if parsed.path.startswith("/api/terminal/session/"):
                         session_id = parsed.path.rsplit("/", 1)[-1]
                         query = parse_qs(parsed.query)

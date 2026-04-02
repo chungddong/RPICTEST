@@ -42,6 +42,7 @@ Open `http://127.0.0.1:8080`.
 4. Boot the Pi and let the local server start automatically.
 
 The local web app is designed to be reachable at `http://192.168.4.1:8080` after the phone joins the Pi hotspot.
+For a lightweight connectivity check, open `http://192.168.4.1:8080/healthz`.
 
 ## Install on Raspberry Pi
 
@@ -70,7 +71,7 @@ chmod +x deploy/install_from_github.sh
 If you want to reconfigure the hotspot later:
 
 ```bash
-sudo /opt/pi-classroom-device/deploy/setup_hotspot_nmcli.sh wlan0 RPIC-001 classroompi
+sudo /opt/pi-classroom-device/deploy/setup_hotspot_nmcli.sh wlan0 RPIC-001 classroompi 192.168.4.1/24
 sudo systemctl start pi-classroom-device.service
 sudo systemctl status pi-classroom-device.service
 ```

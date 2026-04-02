@@ -8,6 +8,7 @@ PROJECT_DIR="${2:-/opt/pi-classroom-device}"
 WLAN_IFACE="${3:-wlan0}"
 HOTSPOT_SSID="${4:-RPIC-001}"
 HOTSPOT_PASSWORD="${5:-classroompi}"
+HOTSPOT_ADDRESS_CIDR="${6:-192.168.4.1/24}"
 TMP_DIR="$(mktemp -d)"
 ARCHIVE_URL="https://codeload.github.com/${REPO_OWNER}/${REPO_NAME}/tar.gz/refs/heads/${BRANCH}"
 ARCHIVE_PATH="${TMP_DIR}/repo.tar.gz"
@@ -55,10 +56,11 @@ chmod +x "${SOURCE_DIR}/deploy/install_pi_service.sh"
 
 echo "[6/6] Configuring hotspot and starting service"
 chmod +x "${PROJECT_DIR}/deploy/setup_hotspot_nmcli.sh"
-sudo "${PROJECT_DIR}/deploy/setup_hotspot_nmcli.sh" "${WLAN_IFACE}" "${HOTSPOT_SSID}" "${HOTSPOT_PASSWORD}"
+sudo "${PROJECT_DIR}/deploy/setup_hotspot_nmcli.sh" "${WLAN_IFACE}" "${HOTSPOT_SSID}" "${HOTSPOT_PASSWORD}" "${HOTSPOT_ADDRESS_CIDR}"
 sudo systemctl restart pi-classroom-device.service
 
 echo "Install complete"
 echo "Hotspot: ${HOTSPOT_SSID} (${WLAN_IFACE})"
+echo "URL: http://${HOTSPOT_ADDRESS_CIDR%/*}:8080"
 echo "Service status:"
 sudo systemctl --no-pager --full status pi-classroom-device.service || true
